@@ -1436,13 +1436,13 @@ struct drm_ioctl_desc kgsl_drm_ioctls[] = {
 };
 
 static const const struct file_operations fops = {
-	.owner = THIS_MODULE,
-	.open = drm_open,
-	.release = drm_release,
-	.unlocked_ioctl = drm_ioctl,
-	.mmap = msm_drm_gem_mmap,
-	.poll = drm_poll,
-	.fasync = drm_fasync,
+		.owner = THIS_MODULE,
+		.open = drm_open,
+		.release = drm_release,
+		.unlocked_ioctl = drm_ioctl,
+		.mmap = msm_drm_gem_mmap,
+		.poll = drm_poll,
+		.fasync = drm_fasync,
 };
 
 static struct drm_driver driver = {
