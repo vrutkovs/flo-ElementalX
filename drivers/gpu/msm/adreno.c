@@ -2109,12 +2109,16 @@ static int adreno_waittimestamp(struct kgsl_device *device,
 	int ret;
 	struct adreno_context *drawctxt;
 
-	if (context == NULL) {
-		/* If they are doing then complain once */
-		dev_WARN_ONCE(device->dev, 1,
-			"IOCTL_KGSL_DEVICE_WAITTIMESTAMP is deprecated\n");
-		return -EINVAL;
+	/* this is sort of crack.. it would be racy to check the ts and the
+	 * wait on it, and this check is pointless.. so just get rid of it:
+	if (timestamp_cmp(timestamp, ts_issued) > 0) {
+		KGSL_DRV_ERR(device, "Cannot wait for invalid ts <%d:0x%x>, "
+			"last issued ts <%d:0x%x>\n",
+			context_id, timestamp, context_id, ts_issued);
+		status = -EINVAL;
+		goto done;
 	}
+	 */
 
 	/* Return -EINVAL if the context has been detached */
 	if (kgsl_context_detached(context))
