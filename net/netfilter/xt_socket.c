@@ -275,7 +275,7 @@ xt_socket_get6_sk(const struct sk_buff *skb, struct xt_action_param *par)
 	struct sock *sk;
 	struct in6_addr *daddr = NULL, *saddr = NULL;
 	__be16 dport = 0, sport = 0;
-	int thoff, tproto;
+	int thoff, tproto = 0;
 
 	tproto = ipv6_find_hdr(skb, &thoff, -1, NULL);
 	if (tproto < 0) {
