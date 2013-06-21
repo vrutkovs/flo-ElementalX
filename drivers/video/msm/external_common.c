@@ -2145,8 +2145,8 @@ bool hdmi_common_get_video_format_from_drv_data(struct msm_fb_data_type *mfd)
 	uint32_t userformat = 0;
 	userformat = var->reserved[3] >> 16;
 
-	if (userformat) {
-		format = userformat-1;
+	if (var->reserved[2]) {
+		format = var->reserved[2]-1;
 		DEV_DBG("reserved format is %d\n", format);
 	} else if (hdmi_prim_resolution) {
 		format = hdmi_prim_resolution - 1;
