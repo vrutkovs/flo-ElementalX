@@ -15,10 +15,8 @@
  * on
  */
 #include "drmP.h"
-#include "drm.h"
-
-#include <linux/msm_ion.h>
-#include <linux/genlock.h>
+#include "drm/drm.h"
+#include <linux/android_pmem.h>
 
 #include "kgsl.h"
 #include "kgsl_device.h"
