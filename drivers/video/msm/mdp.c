@@ -3037,6 +3037,10 @@ static int mdp_probe(struct platform_device *pdev)
 		}
 #endif
 		mdp_config_vsync(mdp_init_pdev, mfd);
+		if (mdp_rev >= MDP_REV_40)
+			mfd->cursor_update = mdp_hw_cursor_sync_update;
+		else
+			mfd->cursor_update = mdp_hw_cursor_update;
 		break;
 #endif
 
