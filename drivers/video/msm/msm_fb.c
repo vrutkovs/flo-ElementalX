@@ -112,6 +112,7 @@ static int msm_fb_pan_display(struct fb_var_screeninfo *var,
 			      struct fb_info *info);
 static int msm_fb_stop_sw_refresher(struct msm_fb_data_type *mfd);
 int msm_fb_resume_sw_refresher(struct msm_fb_data_type *mfd);
+int msm_fb_sw_refresher(void *data);
 static int msm_fb_check_var(struct fb_var_screeninfo *var,
 			    struct fb_info *info);
 static int msm_fb_set_par(struct fb_info *info);
@@ -2362,40 +2363,35 @@ static int msm_fb_set_par(struct fb_info *info)
 
 static int msm_fb_stop_sw_refresher(struct msm_fb_data_type *mfd)
 {
-	if (mfd->hw_refresh)
-		return -EPERM;
-
-	if (mfd->sw_currently_refreshing) {
-		down(&mfd->sem);
-		mfd->sw_currently_refreshing = FALSE;
-		up(&mfd->sem);
-
-		/* wait until the refresher finishes the last job */
-		wait_for_completion_killable(&mfd->refresher_comp);
-	}
-
+	down(&mfd->sem);
+	mfd->sw_currently_refreshing = FALSE;
+	up(&mfd->sem);
 	return 0;
 }
 
 int msm_fb_resume_sw_refresher(struct msm_fb_data_type *mfd)
 {
-	boolean do_refresh;
-
-	if (mfd->hw_refresh)
-		return -EPERM;
-
 	down(&mfd->sem);
-	if ((!mfd->sw_currently_refreshing) && (mfd->sw_refreshing_enable)) {
-		do_refresh = TRUE;
-		mfd->sw_currently_refreshing = TRUE;
-	} else {
-		do_refresh = FALSE;
-	}
+	mfd->sw_currently_refreshing = TRUE;
 	up(&mfd->sem);
+	kernel_thread(msm_fb_sw_refresher, mfd, CLONE_KERNEL);
+	return 0;
+}
 
-	if (do_refresh)
-		mdp_refresh_screen((unsigned long)mfd);
-
+int msm_fb_sw_refresher(void *data)
+{
+	struct msm_fb_data_type *mfd = (struct msm_fb_data_type*)data;
+	daemonize("msm_fb_sw_refresher");
+	allow_signal(SIGKILL);
+	while (1) {
+		msleep(1000/60);
+		if (!mfd->sw_currently_refreshing) break;
+		if (!mfd->dma->busy) {
+			down(&mfd->sem);
+			mfd->dma_fnc(mfd);
+			up(&mfd->sem);
+		}
+	}
 	return 0;
 }
 

@@ -544,15 +544,6 @@ void mdp_dma_vsync_ctrl(int enable)
 		atomic_set(&vsync_cntrl.vsync_resume, 1);
 }
 
-void mdp_lcd_update_workqueue_handler(struct work_struct *work)
-{
-	struct msm_fb_data_type *mfd = NULL;
-
-	mfd = container_of(work, struct msm_fb_data_type, dma_update_worker);
-	if (mfd)
-		mfd->dma_fnc(mfd);
-}
-
 void mdp_set_dma_pan_info(struct fb_info *info, struct mdp_dirty_region *dirty,
 			  boolean sync)
 {
@@ -616,32 +607,3 @@ void mdp_dma_pan_update(struct fb_info *info)
 		mfd->dma_fnc(mfd);
 }
 
-void mdp_refresh_screen(unsigned long data)
-{
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)data;
-
-	if ((mfd->sw_currently_refreshing) && (mfd->sw_refreshing_enable)) {
-		init_timer(&mfd->refresh_timer);
-		mfd->refresh_timer.function = mdp_refresh_screen;
-		mfd->refresh_timer.data = data;
-
-		if (mfd->dma->busy)
-			/* come back in 1 msec */
-			mfd->refresh_timer.expires = jiffies + (HZ / 1000);
-		else
-			mfd->refresh_timer.expires =
-			    jiffies + mfd->refresh_timer_duration;
-
-		add_timer(&mfd->refresh_timer);
-
-		if (!mfd->dma->busy) {
-			if (!queue_work(mdp_dma_wq, &mfd->dma_update_worker)) {
-				MSM_FB_DEBUG("mdp_dma: can't queue_work! -> \
-			MDP/MDDI/LCD clock speed needs to be increased\n");
-			}
-		}
-	} else {
-		if (!mfd->hw_refresh)
-			complete(&mfd->refresher_comp);
-	}
-}

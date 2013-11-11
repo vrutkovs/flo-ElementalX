@@ -108,7 +108,6 @@ MDP_BLOCK_TYPE mdp_debug[MDP_MAX_BLOCK];
 atomic_t mdp_block_power_cnt[MDP_MAX_BLOCK];
 
 spinlock_t mdp_spin_lock;
-struct workqueue_struct *mdp_dma_wq;	/*mdp dma wq */
 struct workqueue_struct *mdp_vsync_wq;	/*mdp vsync wq */
 
 struct workqueue_struct *mdp_hist_wq;	/*mdp histogram wq */
@@ -2234,7 +2233,6 @@ static void mdp_drv_init(void)
 	/* initialize spin lock and workqueue */
 	spin_lock_init(&mdp_spin_lock);
 	spin_lock_init(&mdp_lut_push_lock);
-	mdp_dma_wq = create_singlethread_workqueue("mdp_dma_wq");
 	mdp_vsync_wq = create_singlethread_workqueue("mdp_vsync_wq");
 	mdp_pipe_ctrl_wq = create_singlethread_workqueue("mdp_pipe_ctrl_wq");
 	INIT_DELAYED_WORK(&mdp_pipe_ctrl_worker,
@@ -2893,8 +2891,6 @@ static int mdp_probe(struct platform_device *pdev)
 	case EXT_MDDI_PANEL:
 	case MDDI_PANEL:
 	case EBI2_PANEL:
-		INIT_WORK(&mfd->dma_update_worker,
-			  mdp_lcd_update_workqueue_handler);
 		INIT_WORK(&mfd->vsync_resync_worker,
 			  mdp_vsync_resync_workqueue_handler);
 		mfd->hw_refresh = FALSE;
@@ -3039,8 +3035,6 @@ static int mdp_probe(struct platform_device *pdev)
 			mdp_clk_ctrl(0);
 			goto mdp_probe_err;
 		}
-		INIT_WORK(&mfd->dma_update_worker,
-			mdp_lcd_update_workqueue_handler);
 #endif
 		mdp_config_vsync(mdp_init_pdev, mfd);
 		break;
