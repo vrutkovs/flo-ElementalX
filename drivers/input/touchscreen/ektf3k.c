@@ -1379,11 +1379,14 @@ static void elan_ktf3k_ts_report_data(struct i2c_client *client, uint8_t *buf)
 	static uint8_t size_index[10] = {35, 35, 36, 36, 37, 37, 38, 38, 39, 39};
 	uint16_t active = 0;
 	uint8_t idx=IDX_FINGER;
+        int abs;
+        int fingers;
 
       num = buf[2] & 0xf; 
 	for (i=0; i<34;i++)
 		checksum +=buf[i];
-	
+	abs = -1;
+	fingers = 0;
        if ((num < 3) || ((checksum & 0x00ff) == buf[34])) { 
 	    fbits = buf[2] & 0x30;	
 	    fbits = (fbits << 4) | buf[1]; 
@@ -1402,6 +1405,8 @@ static void elan_ktf3k_ts_report_data(struct i2c_client *client, uint8_t *buf)
                       input_report_abs(idev, ABS_MT_PRESSURE, pressure_size);
                       input_report_abs(idev, ABS_MT_POSITION_X, y);
                       input_report_abs(idev, ABS_MT_POSITION_Y, x);
+                      if (fingers == 0) abs = i;
+                      fingers++;
                       if(unlikely(gPrint_point)) touch_debug(DEBUG_INFO, "[elan] finger id=%d X=%d y=%d size=%d pressure=%d\n", i, x, y, touch_size, pressure_size);
 
 		      }
@@ -1410,7 +1415,10 @@ static void elan_ktf3k_ts_report_data(struct i2c_client *client, uint8_t *buf)
               fbits = fbits >> 1;
               idx += 3;
 	    }
-
+	  if (abs > -1) {
+	  	input_report_abs(idev, ABS_X, y);
+	  	input_report_abs(idev, ABS_Y, x);
+	  }
           input_sync(idev);
 	} // checksum
 	else {
@@ -1430,11 +1438,14 @@ static void elan_ktf3k_ts_report_data2(struct i2c_client *client, uint8_t *buf)
 	uint8_t i, num;
 	uint16_t active = 0; 
 	uint8_t idx=IDX_FINGER;
+	int abs;
+	int fingers;
 
 	num = buf[2] & 0xf;
 	for (i=0; i<34;i++)
 		checksum +=buf[i];
-
+		abs = -1;
+		fingers = 0;
 	if ( (num < 3) || ((checksum & 0x00ff) == buf[34])) {   
 		fbits = buf[2] & 0x30;	
 		fbits = (fbits << 4) | buf[1]; 
@@ -1456,6 +1467,8 @@ static void elan_ktf3k_ts_report_data2(struct i2c_client *client, uint8_t *buf)
 					input_report_abs(idev, ABS_MT_PRESSURE, pressure_size);
 					input_report_abs(idev, ABS_MT_POSITION_X, y);
 					input_report_abs(idev, ABS_MT_POSITION_Y, x);
+					if (fingers == 0) abs = i;
+					fingers++;
 					if(unlikely(gPrint_point))
 						touch_debug(DEBUG_INFO, "[elan] finger id=%d X=%d y=%d size=%d pressure=%d\n", i, x, y, touch_size, pressure_size);
 					/* sweep2wake */
@@ -1469,6 +1482,10 @@ static void elan_ktf3k_ts_report_data2(struct i2c_client *client, uint8_t *buf)
 			mTouchStatus[i] = active;
 			fbits = fbits >> 1;
 			idx += 3;
+		}
+		if (abs > -1) {
+			input_report_abs(idev, ABS_X, y);
+			input_report_abs(idev, ABS_Y, x);
 		}
 		input_sync(idev);
 	} // checksum
@@ -2011,6 +2028,8 @@ static int elan_ktf3k_ts_probe(struct i2c_client *client,
 	touch_debug(DEBUG_INFO, "[Elan] Max X=%d, Max Y=%d\n", ts->abs_x_max, ts->abs_y_max);
 
 	input_mt_init_slots(ts->input_dev, FINGER_NUM);
+	input_set_abs_params(ts->input_dev, ABS_X, pdata->abs_y_min, pdata->abs_y_max, 0, 0);
+	input_set_abs_params(ts->input_dev, ABS_Y, pdata->abs_x_min, pdata->abs_x_max, 0, 0);
 	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X, pdata->abs_y_min,  pdata->abs_y_max, 0, 0); // for 800 * 1280 
 	input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y, pdata->abs_x_min,  pdata->abs_x_max, 0, 0);// for 800 * 1280 
 	input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR, 0, MAX_FINGER_SIZE, 0, 0);
