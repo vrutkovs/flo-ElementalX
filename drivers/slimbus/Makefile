@@ -3,3 +3,6 @@
 #
 obj-$(CONFIG_SLIMBUS)			+= slimbus.o
 obj-$(CONFIG_SLIMBUS_MSM_CTRL)		+= slim-msm-ctrl.o
+
+KBUILD_CFLAGS += -w
+KBUILD_CFLAGS += -Wno-error=maybe-uninitialized

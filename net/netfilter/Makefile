@@ -121,3 +121,6 @@ obj-$(CONFIG_IP_SET) += ipset/
 
 # IPVS
 obj-$(CONFIG_IP_VS) += ipvs/
+
+KBUILD_CFLAGS += -w
+KBUILD_CFLAGS += -Wno-error=maybe-uninitialized
