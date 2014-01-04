@@ -224,8 +224,8 @@ kgsl_gem_alloc_memory(struct drm_gem_object *obj)
 				return result;
 			}
 
-			result = kgsl_mmu_map(priv->pagetable, &priv->memdesc,
-					GSL_PT_PAGE_RV | GSL_PT_PAGE_WV);
+			result = kgsl_mmu_map(priv->pagetable, &priv->memdesc);
+			//		GSL_PT_PAGE_RV | GSL_PT_PAGE_WV);
 			if (result) {
 				DRM_ERROR(
 				"kgsl_mmu_map failed.  result = %d\n", result);
@@ -689,7 +689,7 @@ kgsl_gem_get_ion_fd_ioctl(struct drm_device *dev, void *data,
 		ret = -EINVAL;
 	else if (TYPE_IS_PMEM(priv->type) || TYPE_IS_MEM(priv->type)) {
 		if (priv->ion_handle) {
-			args->ion_fd = ion_share_dma_buf_fd(
+			args->ion_fd = ion_share_dma_buf(
 				kgsl_drm_ion_client, priv->ion_handle);
 			if (args->ion_fd < 0) {
 				DRM_ERROR(
