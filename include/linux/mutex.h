@@ -10,6 +10,7 @@
 #ifndef __LINUX_MUTEX_H
 #define __LINUX_MUTEX_H
 
+#include <asm/current.h>
 #include <linux/list.h>
 #include <linux/spinlock_types.h>
 #include <linux/linkage.h>
@@ -132,8 +133,11 @@ static inline void mutex_destroy(struct mutex *lock) {}
 #ifdef CONFIG_DEBUG_LOCK_ALLOC
 # define __DEP_MAP_MUTEX_INITIALIZER(lockname) \
 		, .dep_map = { .name = #lockname }
+# define __WW_CLASS_MUTEX_INITIALIZER(lockname, ww_class) \
+		, .ww_class = &ww_class
 #else
 # define __DEP_MAP_MUTEX_INITIALIZER(lockname)
+# define __WW_CLASS_MUTEX_INITIALIZER(lockname, ww_class)
 #endif
 
 #define __MUTEX_INITIALIZER(lockname) \
@@ -143,11 +147,47 @@ static inline void mutex_destroy(struct mutex *lock) {}
 		__DEBUG_MUTEX_INITIALIZER(lockname) \
 		__DEP_MAP_MUTEX_INITIALIZER(lockname) }
 
+#define __WW_CLASS_INITIALIZER(ww_class) \
+		{ .stamp = ATOMIC_LONG_INIT(0) \
+		, .acquire_name = #ww_class "_acquire" \
+		, .mutex_name = #ww_class "_mutex" }
+
+#define __WW_MUTEX_INITIALIZER(lockname, class) \
+		{ .base = { \__MUTEX_INITIALIZER(lockname) } \
+		__WW_CLASS_MUTEX_INITIALIZER(lockname, class) }
+
 #define DEFINE_MUTEX(mutexname) \
 	struct mutex mutexname = __MUTEX_INITIALIZER(mutexname)
 
+#define DEFINE_WW_CLASS(classname) \
+	struct ww_class classname = __WW_CLASS_INITIALIZER(classname)
+
+#define DEFINE_WW_MUTEX(mutexname, ww_class) \
+	struct ww_mutex mutexname = __WW_MUTEX_INITIALIZER(mutexname, ww_class)
+
+
 extern void __mutex_init(struct mutex *lock, const char *name,
 			 struct lock_class_key *key);
+
+/**
+ * ww_mutex_init - initialize the w/w mutex
+ * @lock: the mutex to be initialized
+ * @ww_class: the w/w class the mutex should belong to
+ *
+ * Initialize the w/w mutex to unlocked state and associate it with the given
+ * class.
+ *
+ * It is not allowed to initialize an already locked mutex.
+ */
+static inline void ww_mutex_init(struct ww_mutex *lock,
+				 struct ww_class *ww_class)
+{
+	__mutex_init(&lock->base, ww_class->mutex_name, &ww_class->mutex_key);
+	lock->ctx = NULL;
+#ifdef CONFIG_DEBUG_MUTEXES
+	lock->ww_class = ww_class;
+#endif
+}
 
 /**
  * mutex_is_locked - is the mutex locked
@@ -167,6 +207,7 @@ static inline int mutex_is_locked(struct mutex *lock)
 #ifdef CONFIG_DEBUG_LOCK_ALLOC
 extern void mutex_lock_nested(struct mutex *lock, unsigned int subclass);
 extern void _mutex_lock_nest_lock(struct mutex *lock, struct lockdep_map *nest_lock);
+
 extern int __must_check mutex_lock_interruptible_nested(struct mutex *lock,
 					unsigned int subclass);
 extern int __must_check mutex_lock_killable_nested(struct mutex *lock,
@@ -178,7 +219,7 @@ extern int __must_check mutex_lock_killable_nested(struct mutex *lock,
 
 #define mutex_lock_nest_lock(lock, nest_lock)				\
 do {									\
-	typecheck(struct lockdep_map *, &(nest_lock)->dep_map);		\
+	typecheck(struct lockdep_map *, &(nest_lock)->dep_map);	\
 	_mutex_lock_nest_lock(lock, &(nest_lock)->dep_map);		\
 } while (0)
 
