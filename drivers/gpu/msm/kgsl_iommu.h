@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012, Code Aurora Forum. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -19,44 +19,12 @@
 #define KGSL_IOMMU_CTX_OFFSET_V2	0x8000
 #define KGSL_IOMMU_CTX_SHIFT		12
 
-/* TLBLKCR fields */
-#define KGSL_IOMMU_TLBLKCR_LKE_MASK		0x00000001
-#define KGSL_IOMMU_TLBLKCR_LKE_SHIFT		0
-#define KGSL_IOMMU_TLBLKCR_TLBIALLCFG_MASK	0x00000001
-#define KGSL_IOMMU_TLBLKCR_TLBIALLCFG_SHIFT	1
-#define KGSL_IOMMU_TLBLKCR_TLBIASIDCFG_MASK	0x00000001
-#define KGSL_IOMMU_TLBLKCR_TLBIASIDCFG_SHIFT	2
-#define KGSL_IOMMU_TLBLKCR_TLBIVAACFG_MASK	0x00000001
-#define KGSL_IOMMU_TLBLKCR_TLBIVAACFG_SHIFT	3
-#define KGSL_IOMMU_TLBLKCR_FLOOR_MASK		0x000000FF
-#define KGSL_IOMMU_TLBLKCR_FLOOR_SHIFT		8
-#define KGSL_IOMMU_TLBLKCR_VICTIM_MASK		0x000000FF
-#define KGSL_IOMMU_TLBLKCR_VICTIM_SHIFT		16
-
-/* V2PXX fields */
-#define KGSL_IOMMU_V2PXX_INDEX_MASK		0x000000FF
-#define KGSL_IOMMU_V2PXX_INDEX_SHIFT		0
-#define KGSL_IOMMU_V2PXX_VA_MASK		0x000FFFFF
-#define KGSL_IOMMU_V2PXX_VA_SHIFT		12
-
-/* FSYNR1 V0 fields */
-#define KGSL_IOMMU_FSYNR1_AWRITE_MASK		0x00000001
-#define KGSL_IOMMU_FSYNR1_AWRITE_SHIFT		8
-/* FSYNR0 V1 fields */
-#define KGSL_IOMMU_V1_FSYNR0_WNR_MASK		0x00000001
-#define KGSL_IOMMU_V1_FSYNR0_WNR_SHIFT		4
-
 enum kgsl_iommu_reg_map {
 	KGSL_IOMMU_GLOBAL_BASE = 0,
 	KGSL_IOMMU_CTX_TTBR0,
 	KGSL_IOMMU_CTX_TTBR1,
 	KGSL_IOMMU_CTX_FSR,
 	KGSL_IOMMU_CTX_TLBIALL,
-	KGSL_IOMMU_CTX_RESUME,
-	KGSL_IOMMU_CTX_TLBLKCR,
-	KGSL_IOMMU_CTX_V2PUR,
-	KGSL_IOMMU_CTX_FSYNR0,
-	KGSL_IOMMU_CTX_FSYNR1,
 	KGSL_IOMMU_REG_MAX
 };
 
@@ -109,8 +77,6 @@ struct kgsl_iommu_register_list {
  * @ctx_id: This iommu units context id. It can be either 0 or 1
  * @clk_enabled: If set indicates that iommu clocks of this iommu context
  * are on, else the clocks are off
- * fault: Flag when set indicates that this iommu device has caused a page
- * fault
  */
 struct kgsl_iommu_device {
 	struct device *dev;
@@ -119,7 +85,6 @@ struct kgsl_iommu_device {
 	enum kgsl_iommu_context_id ctx_id;
 	bool clk_enabled;
 	struct kgsl_device *kgsldev;
-	int fault;
 };
 
 /*
@@ -151,11 +116,6 @@ struct kgsl_iommu_unit {
  * @ctx_offset: The context offset to be added to base address when
  * accessing IOMMU registers
  * @iommu_reg_list: List of IOMMU registers { offset, map, shift } array
- * @sync_lock_vars: Pointer to the IOMMU spinlock for serializing access to the
- * IOMMU registers
- * @sync_lock_desc: GPU Memory descriptor for the memory containing the
- * spinlocks
- * @sync_lock_initialized: True if the sync_lock feature is enabled
  */
 struct kgsl_iommu {
 	struct kgsl_iommu_unit iommu_units[KGSL_IOMMU_MAX_UNITS];
@@ -165,9 +125,6 @@ struct kgsl_iommu {
 	struct kgsl_device *device;
 	unsigned int ctx_offset;
 	struct kgsl_iommu_register_list *iommu_reg_list;
-	struct remote_iommu_petersons_spinlock *sync_lock_vars;
-	struct kgsl_memdesc sync_lock_desc;
-	bool sync_lock_initialized;
 };
 
 /*
