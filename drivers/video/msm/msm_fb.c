@@ -941,17 +941,24 @@ void msm_fb_set_backlight(struct msm_fb_data_type *mfd, __u32 bkl_lvl)
         pr_info("%s+\n", __func__);
 
 	unset_bl_level = bkl_lvl;
-	if (!mfd->panel_power_on || !bl_updated) {
+        pr_info("panel_power_on: %d", mfd->panel_power_on);
+        pr_info("bl_updated: %d", bl_updated);
+	//if (!mfd->panel_power_on || !bl_updated) {
+	if (!mfd->panel_power_on) {
+                pr_info("%s: panel not powered off", __func__);
 		return;
 	}
 
 	pdata = (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
 
+        pr_info("%s: second clause", __func__);
 	if ((pdata) && (pdata->set_backlight)) {
+                pr_info("%s: trying to set backlight", __func__);
 		msm_fb_scale_bl(&temp);
-		if (bl_level_old == temp) {
+		/*if (bl_level_old == temp) {
+                        pr_info("%s: premature return", __func__);
 			return;
-		}
+		}*/
 		mfd->bl_level = temp;
 		pdata->set_backlight(mfd);
 		mfd->bl_level = bkl_lvl;
