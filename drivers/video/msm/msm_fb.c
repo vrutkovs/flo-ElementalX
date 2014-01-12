@@ -938,6 +938,8 @@ void msm_fb_set_backlight(struct msm_fb_data_type *mfd, __u32 bkl_lvl)
 	struct msm_fb_panel_data *pdata;
 	__u32 temp = bkl_lvl;
 
+        pr_info("%s+\n", __func__);
+
 	unset_bl_level = bkl_lvl;
 	if (!mfd->panel_power_on || !bl_updated) {
 		return;
@@ -955,6 +957,7 @@ void msm_fb_set_backlight(struct msm_fb_data_type *mfd, __u32 bkl_lvl)
 		mfd->bl_level = bkl_lvl;
 		bl_level_old = temp;
 	}
+        pr_info("%s-\n", __func__);
 }
 
 static int msm_fb_blank_sub(int blank_mode, struct fb_info *info,
