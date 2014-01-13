@@ -2434,6 +2434,7 @@ int msm_fb_sw_refresher(void *data)
 	daemonize("msm_fb_sw_refresher");
 	allow_signal(SIGKILL);
 	while (1) {
+                pr_info("%s: action", __func__);
 		msleep(1000/60);
 		if (!mfd->sw_currently_refreshing) break;
 		if (!mfd->dma->busy) {
@@ -2442,6 +2443,7 @@ int msm_fb_sw_refresher(void *data)
 			up(&mfd->sem);
 		}
 	}
+        pr_info("%s-:", __func__);
 	return 0;
 }
 
